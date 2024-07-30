@@ -6,10 +6,14 @@ from huggingface_hub import InferenceClient
 from flask import Flask
 from threading import Thread
 
-if environ['PROXY'] is not None:
-  session = AiohttpSession(proxies=environ['PROXY'])
-else:
-  session = AiohttpSession()
+from logging import basicConfig
+
+basicConfig(level=0)
+
+# if environ['PROXY'] is not None:
+#   session = AiohttpSession(proxies=environ['PROXY'])
+# else:
+session = AiohttpSession()
 
 bot = Bot(environ['TOKEN'], session=session)
 client = InferenceClient(model='mistralai/Mistral-Nemo-Instruct-2407', token=environ['HF_TOKEN'])
