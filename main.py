@@ -47,7 +47,7 @@ async def kill_polling():
 def stop():
   asyncio.run(kill_polling())
   make_response('Bot has been stopped. Stopping Flask thread...')
-  t.shutdown()
+  flask_t.shutdown()
   return 'Flask thread has been stopped'
 
 def keep_alive():
