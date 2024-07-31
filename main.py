@@ -51,7 +51,7 @@ def stop():
   return 'Flask thread has been stopped'
 
 def keep_alive():
-  app.run(host='0.0.0.0', port=80)
+  t.run()
 
 class ServerThread(Thread):
   def __init__(self, appl):
@@ -67,10 +67,11 @@ class ServerThread(Thread):
   def shutdown(self):
     self.server.shutdown()
 
-async def run(thread):
-  thread.run()
+async def run():
+  flask_t.run()
   await dp.start_polling(bot)
 
 if __name__ == '__main__':
-  t = ServerThread(app)
-  asyncio.run(run(t))
+  flask_t = ServerThread(app)
+  t = Thread(target=keep_alive)
+  asyncio.run(run())
