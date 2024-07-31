@@ -23,10 +23,17 @@ dp = Dispatcher()
 memory = {}
 app = Flask('')
 
+@dp.message(F.text == '!clear')
+async def clear(message: types.Message):
+  if memory.get(message.chat.id) is None:
+    return await message.reply('No memory to clear')
+  del memory[message.chat.id]
+
 @dp.message(F.text)
 async def ai(message: types.Message):
+  global memory
   if memory.get(message.chat.id) is None:
-    memory[message.chat.id] = [{'role': 'system', 'content': 'You are a helpful assistant.', 'role': 'user', 'content': message.text}]
+    memory[message.chat.id] = [{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': message.text}]
   else:
     memory[message.chat.id].append({'role': 'user', 'content': message.text})
   msg = await message.answer('⏳')
