@@ -56,9 +56,11 @@ async def ai(message: types.Message):
   else:
     memory.append(message.chat.id, {'role': 'user', 'content': message.text})
   debug(memory)
+  mem = list(memory.get(message.chat.id))
+  response = client.chat_completion(mem, stream=False)
   res = ''
-  for messages in client.chat_completion(memory.get(message.chat.id), stream=False):
-    res += str(messages.choices[0].delta.content)
+  for token in response.choices:
+    res += token.message.content
   await message.answer('💬\n'+res)
   memory.append(message.chat.id, {'role': 'assistant', 'content': res})
 
