@@ -51,7 +51,7 @@ def stop():
   return 'Flask thread has been stopped'
 
 def keep_alive():
-  t.run()
+  flask_t.run()
 
 class ServerThread(Thread):
   def __init__(self, appl):
