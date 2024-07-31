@@ -68,7 +68,7 @@ class ServerThread(Thread):
     self.server.shutdown()
 
 async def run():
-  t.run()
+  t.start()
   await dp.start_polling(bot)
 
 if __name__ == '__main__':
