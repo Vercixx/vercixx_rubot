@@ -1,12 +1,13 @@
-from aiogram import Bot, Dispatcher, F, types
-from aiogram.client.session.aiohttp import AiohttpSession
+import asyncio
+from logging import basicConfig, info
 from os import environ
-from huggingface_hub import InferenceClient
-
-from flask import Flask
 from threading import Thread
 
-from logging import basicConfig
+from aiogram import Bot, Dispatcher, F, types
+from aiogram.client.session.aiohttp import AiohttpSession
+from flask import Flask, make_response
+from huggingface_hub import InferenceClient
+from werkzeug.serving import make_server
 
 basicConfig(level=0)
 
@@ -20,12 +21,11 @@ client = InferenceClient(model='mistralai/Mistral-Nemo-Instruct-2407', token=env
 dp = Dispatcher()
 
 memory = {}
-
 app = Flask('')
 
 @dp.message(F.text)
 async def ai(message: types.Message):
-  if memory[message.chat.id] is None:
+  if memory.get(message.chat.id) is None:
     memory[message.chat.id] = [{'role': 'system', 'content': 'You are a helpful assistant.', 'role': 'user', 'content': message.text}]
   else:
     memory[message.chat.id].append({'role': 'user', 'content': message.text})
@@ -40,14 +40,37 @@ async def ai(message: types.Message):
 def home():
   return "I'm alive"
 
+async def kill_polling():
+  await dp.stop_polling()
+
+@app.route('/stop')
+def stop():
+  asyncio.run(kill_polling())
+  make_response('Bot has been stopped. Stopping Flask thread...')
+  t.shutdown()
+  return 'Flask thread has been stopped'
+
 def keep_alive():
   app.run(host='0.0.0.0', port=80)
 
-async def run():
-  t = Thread(target=keep_alive)
-  t.start()
+class ServerThread(Thread):
+  def __init__(self, appl):
+    Thread.__init__(self)
+    self.server = make_server('0.0.0.0', 80, appl)
+    self.ctx = appl.app_context()
+    self.ctx.push()
+
+  def run(self):
+    info('starting server')
+    self.server.serve_forever()
+
+  def shutdown(self):
+    self.server.shutdown()
+
+async def run(thread):
+  thread.run()
   await dp.start_polling(bot)
 
 if __name__ == '__main__':
-  import asyncio
-  asyncio.run(run())
+  t = ServerThread(app)
+  asyncio.run(run(t))
