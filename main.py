@@ -42,7 +42,9 @@ async def ai(message: types.Message):
   for messages in client.chat_completion(memory[message.chat.id], stream=True):
     res += str(messages.choices[0].delta.content)
     await msg.edit_text('💬\n'+res)
-  memory[message.chat.id].append({'role': 'assistant', 'content': res})
+  ex_memory = memory[message.chat.id]
+  ex_memory.append({'role': 'assistant', 'content': res})
+  memory[message.chat.id] = ex_memory
 
 @app.route('/')
 def home():
