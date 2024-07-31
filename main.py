@@ -20,31 +20,48 @@ bot = Bot(environ['TOKEN'], session=session)
 client = InferenceClient(model='mistralai/Mistral-Nemo-Instruct-2407', token=environ['HF_TOKEN'])
 dp = Dispatcher()
 
-memory = {}
+class Memory():
+  def __init__(self):
+    self.memory = {}
+  def add(self, key, value):
+    # Also can be used to update the value of a key
+    self.memory[key] = value
+  def append(self, key, value):
+    if isinstance(self.memory[key], list):
+      self.memory[key].append(value)
+  def get(self, key):
+    if self.memory.get(key) is not None:
+      return self.memory[key]
+    else:
+      return None
+  def remove(self, key):
+    del self.memory[key]
+
+memory = Memory()
 app = Flask('')
 
+@dp.business_message(F.text == '!clear')
 @dp.message(F.text == '!clear')
 async def clear(message: types.Message):
   if memory.get(message.chat.id) is None:
     return await message.reply('No memory to clear')
-  del memory[message.chat.id]
+  memory.remove(message.chat.id)
 
+@dp.business_message(F.text)
 @dp.message(F.text)
 async def ai(message: types.Message):
   global memory
   if memory.get(message.chat.id) is None:
-    memory[message.chat.id] = [{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': message.text}]
+    memory.add(message.chat.id, [{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': message.text}])
   else:
-    memory[message.chat.id].append({'role': 'user', 'content': message.text})
+    memory.append(message.chat.id, {'role': 'user', 'content': message.text})
   debug(memory)
   msg = await message.answer('⏳')
   res = ''
-  for messages in client.chat_completion(memory[message.chat.id], stream=True):
+  for messages in client.chat_completion(memory.get(message.chat.id), stream=True):
     res += str(messages.choices[0].delta.content)
     await msg.edit_text('💬\n'+res)
-  ex_memory = memory[message.chat.id]
-  ex_memory.append({'role': 'assistant', 'content': res})
-  memory[message.chat.id] = ex_memory
+  memory.append(message.chat.id, {'role': 'assistant', 'content': res})
 
 @app.route('/')
 def home():
