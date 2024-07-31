@@ -1,5 +1,5 @@
 import asyncio
-from logging import basicConfig, info
+from logging import basicConfig, debug, info
 from os import environ
 from threading import Thread
 
@@ -36,6 +36,7 @@ async def ai(message: types.Message):
     memory[message.chat.id] = [{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': message.text}]
   else:
     memory[message.chat.id].append({'role': 'user', 'content': message.text})
+  debug(memory)
   msg = await message.answer('⏳')
   res = ''
   for messages in client.chat_completion(memory[message.chat.id], stream=True):
